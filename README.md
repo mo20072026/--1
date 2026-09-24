@@ -215,6 +215,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('hvac')">空调冷量/风量负荷及管径计算</button>
     <button class="tab-btn" onclick="switchTab('smoke')">排烟风管与风口尺寸校核与选型</button>
+    <button class="tab-btn" onclick="switchTab('cooling')">根据冷量选选风管与水/冷媒管径</button>
   </div>
 
   <!-- 选项卡 1：暖通负荷及水/冷媒管径计算 -->
@@ -251,10 +252,10 @@
 
       <h2>二、水系统管径建议 (水系统机组)</h2>
       <div class="result-item">冷冻水流量 (温差 5℃): <span id="chilledWaterFlow">0</span> m³/h</div>
-      <div class="result-item">冷冻水管径建议: <span class="highlight-blue" id="chilledWaterPipe">--</span> (控制流速 $\le 1.5$ m/s)</div>
+      <div class="result-item">冷冻水管径建议: <span class="highlight-blue" id="chilledWaterPipe">--</span> (控制流速 &le; 1.5 m/s)</div>
       
       <div class="result-item" style="margin-top:8px;">冷却水流量 (温差 5℃，含热回收): <span id="coolingWaterFlow">0</span> m³/h</div>
-      <div class="result-item">冷却水管径建议: <span class="highlight-blue" id="coolingWaterPipe">--</span> (控制流速 $\le 2.0$ m/s)</div>
+      <div class="result-item">冷却水管径建议: <span class="highlight-blue" id="coolingWaterPipe">--</span> (控制流速 &le; 2.0 m/s)</div>
 
       <div class="result-item" style="margin-top:8px;">冷凝水管径建议: <span class="highlight" id="condensatePipe">--</span> (按冷量及无压坡度排水推荐)</div>
 
@@ -335,7 +336,7 @@
     <div class="result-card" id="smokeResult" style="display:none;">
       <h2>二、排烟系统风管与风口校核结果</h2>
       <div class="result-item">防烟分区最小总排烟量: <span class="highlight" id="totalSmokeVol">0</span> m³/h</div>
-      <div class="result-item">单口防“吸穿”最大允许排烟量 ($Q_{max}$): <span class="highlight-blue" id="qMaxLimit">0</span> m³/h</div>
+      <div class="result-item">单口防“吸穿”最大允许排烟量 (Q_max): <span class="highlight-blue" id="qMaxLimit">0</span> m³/h</div>
       <div class="result-item">设计所需排烟风口最少数量: <span class="highlight" id="minPortCount">0</span> 个</div>
       
       <hr style="margin:12px 0; border:0; border-top:1px dashed #d9d9d9;">
@@ -345,7 +346,7 @@
         <span id="portSizeDisplay">--</span>
         <span id="portVelocityBadge" class="status-badge">--</span>
       </div>
-      <div class="result-item">单风口计算过风风速: <span class="highlight-blue" id="portVelocity">0</span> m/s (规范要求 $\le 10$ m/s)</div>
+      <div class="result-item">单风口计算过风风速: <span class="highlight-blue" id="portVelocity">0</span> m/s (规范要求 &le; 10 m/s)</div>
 
       <hr style="margin:12px 0; border:0; border-top:1px dashed #d9d9d9;">
 
@@ -354,7 +355,7 @@
         <span id="ductSizeDisplay">--</span>
         <span id="ductVelocityBadge" class="status-badge">--</span>
       </div>
-      <div class="result-item">排烟管道实际截面风速: <span class="highlight" id="ductVelocity">0</span> m/s (规范要求: 金属风管 $\le 20$ m/s，非金属 $\le 15$ m/s)</div>
+      <div class="result-item">排烟管道实际截面风速: <span class="highlight" id="ductVelocity">0</span> m/s (规范要求: 金属风管 &le; 20 m/s，非金属 &le; 15 m/s)</div>
 
       <div class="notice-box">
         <strong>⚠️ 距墙门及布局规范复核提示：</strong>
@@ -364,6 +365,49 @@
           <li><strong>墙面安装高度：</strong> 若采用墙面排烟口，其上边缘距室内地坪高度<span style="color:#d9363e;font-weight:bold;">不应小于 2.0m</span>。</li>
         </ul>
       </div>
+    </div>
+  </div>
+
+  <!-- 选项卡 3：根据冷量直接推荐风管及管径 -->
+  <div id="cooling" class="tab-content">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>已知系统冷量 Q (kW):</label>
+        <input type="number" id="inputCoolingKw" value="100" placeholder="请输入冷量 kW">
+      </div>
+      <div class="form-group">
+        <label>全空气系统风管风速限制 (m/s):</label>
+        <input type="number" id="airVelocity" value="6.0" step="0.5" placeholder="主风管推荐 5.0 - 8.0 m/s">
+      </div>
+    </div>
+    <button class="btn-submit" onclick="calcByCooling()">根据冷量推荐风管与各类管径</button>
+
+    <div class="result-card" id="coolingResult" style="display:none;">
+      <h2>一、系统基础风量推算</h2>
+      <div class="result-item">对应折算匹数: <span class="highlight-blue" id="cTotalHP">0</span> 匹 (HP)</div>
+      <div class="result-item">全空气系统建议风量: <span class="highlight" id="cAirVolume">0</span> m³/h</div>
+
+      <hr style="margin:14px 0; border:0; border-top:1px dashed #d9d9d9;">
+
+      <h2>二、全空气系统风管尺寸建议</h2>
+      <div class="result-item">风管推荐规格 (宽 × 高): <span class="highlight-blue" id="cAirDuctSize">--</span></div>
+
+      <hr style="margin:14px 0; border:0; border-top:1px dashed #d9d9d9;">
+
+      <h2>三、水系统管径建议 (水系统机组)</h2>
+      <div class="result-item">冷冻水流量 (ΔT=5℃): <span id="cChilledFlow">0</span> m³/h</div>
+      <div class="result-item">冷冻水管径建议: <span class="highlight-blue" id="cChilledPipe">--</span> (控制流速 &le; 1.5 m/s)</div>
+      
+      <div class="result-item" style="margin-top:8px;">冷却水流量 (ΔT=5℃，含热回收): <span id="cCoolingFlow">0</span> m³/h</div>
+      <div class="result-item">冷却水管径建议: <span class="highlight-blue" id="cCoolingPipe">--</span> (控制流速 &le; 2.0 m/s)</div>
+
+      <div class="result-item" style="margin-top:8px;">冷凝水管径建议: <span class="highlight" id="cCondensatePipe">--</span> (按无压坡度排水推荐)</div>
+
+      <hr style="margin:14px 0; border:0; border-top:1px dashed #d9d9d9;">
+
+      <h2>四、冷媒铜管管径建议 (VRF氟系统机组)</h2>
+      <div class="result-item">冷媒气管建议 (低压管): <span class="highlight-blue" id="cRefrigGasPipe">--</span></div>
+      <div class="result-item">冷媒液管建议 (高压管): <span class="highlight-blue" id="cRefrigLiquidPipe">--</span></div>
     </div>
   </div>
 </div>
@@ -376,9 +420,12 @@
     if (tabId === 'hvac') {
       document.querySelectorAll('.tab-btn')[0].classList.add('active');
       document.getElementById('hvac').classList.add('active');
-    } else {
+    } else if (tabId === 'smoke') {
       document.querySelectorAll('.tab-btn')[1].classList.add('active');
       document.getElementById('smoke').classList.add('active');
+    } else {
+      document.querySelectorAll('.tab-btn')[2].classList.add('active');
+      document.getElementById('cooling').classList.add('active');
     }
   }
 
@@ -509,6 +556,82 @@
     } else {
       return { gas: "Φ41.3 mm 以上或多路分流", liquid: "Φ22.2 mm 以上或多路分流" };
     }
+  }
+
+  // 根据风量和设定风速，选定标准全空气矩形风管尺寸
+  function recommendAirDuct(airVolM3h, targetV) {
+    if (airVolM3h <= 0) return "--";
+    const reqArea = airVolM3h / (3600 * targetV); // 所需截面积 m²
+
+    const standardDucts = [
+      { name: "320 × 200 mm", area: 0.064 },
+      { name: "400 × 250 mm", area: 0.100 },
+      { name: "500 × 320 mm", area: 0.160 },
+      { name: "630 × 320 mm", area: 0.2016 },
+      { name: "630 × 400 mm", area: 0.252 },
+      { name: "800 × 400 mm", area: 0.320 },
+      { name: "800 × 500 mm", area: 0.400 },
+      { name: "1000 × 500 mm", area: 0.500 },
+      { name: "1000 × 630 mm", area: 0.630 },
+      { name: "1250 × 630 mm", area: 0.7875 },
+      { name: "1600 × 630 mm", area: 1.008 },
+      { name: "1600 × 800 mm", area: 1.280 },
+      { name: "2000 × 800 mm", area: 1.600 },
+      { name: "2000 × 1000 mm", area: 2.000 }
+    ];
+
+    for (let duct of standardDucts) {
+      if (duct.area >= reqArea) {
+        let actualV = airVolM3h / (3600 * duct.area);
+        return `${duct.name} (截面积 ${duct.area.toFixed(2)} m²，实际风速约 ${actualV.toFixed(2)} m/s)`;
+      }
+    }
+    return `截面积需 ≥ ${reqArea.toFixed(2)} m² (建议加大尺寸或分多路输送)`;
+  }
+
+  // --- 第三页：直接根据冷量计算各系统管径逻辑 ---
+  function calcByCooling() {
+    const totalKw = parseFloat(document.getElementById('inputCoolingKw').value) || 0;
+    const targetAirV = parseFloat(document.getElementById('airVelocity').value) || 6.0;
+
+    // 1. 基本风量与匹数计算
+    const totalHP = totalKw / 2.5; // 匹数估算
+    const airVol = (totalKw * 3600) / (1.2 * 1.005 * 9); // 全空气风量
+
+    // 2. 矩形风管管径推荐
+    const airDuctStr = recommendAirDuct(airVol, targetAirV);
+
+    // 3. 冷冻水流量与管径推荐 (ΔT=5℃)
+    const chilledFlow = (totalKw * 3600) / (4.187 * 1000 * 5);
+    const chilledPipeStr = recommendPipeSize(chilledFlow, 1.2);
+
+    // 4. 冷却水流量与管径推荐
+    const coolingFlow = chilledFlow * 1.25;
+    const coolingPipeStr = recommendPipeSize(coolingFlow, 1.5);
+
+    // 5. 冷凝水管径推荐
+    const condensatePipeStr = recommendCondensatePipe(totalKw);
+
+    // 6. 冷媒铜管推荐
+    const refrigPipes = recommendRefrigerantPipe(totalKw);
+
+    // 渲染结果
+    document.getElementById('cTotalHP').innerText = totalHP.toFixed(1);
+    document.getElementById('cAirVolume').innerText = Math.round(airVol);
+    document.getElementById('cAirDuctSize').innerText = airDuctStr;
+
+    document.getElementById('cChilledFlow').innerText = chilledFlow.toFixed(2);
+    document.getElementById('cChilledPipe').innerText = chilledPipeStr;
+
+    document.getElementById('cCoolingFlow').innerText = coolingFlow.toFixed(2);
+    document.getElementById('cCoolingPipe').innerText = coolingPipeStr;
+
+    document.getElementById('cCondensatePipe').innerText = condensatePipeStr;
+
+    document.getElementById('cRefrigGasPipe').innerText = refrigPipes.gas;
+    document.getElementById('cRefrigLiquidPipe').innerText = refrigPipes.liquid;
+
+    document.getElementById('coolingResult').style.display = 'block';
   }
 
   // --- 第二页：防排烟系统计算逻辑 (保持不变) ---
